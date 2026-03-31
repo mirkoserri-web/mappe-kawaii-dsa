@@ -282,9 +282,9 @@ function renderMap(data) {
   document.getElementById('map-title').textContent = data.titolo;
 
   const ns = 'http://www.w3.org/2000/svg';
-  const W=760, CX=W/2, CY=300;
+  const W=900, H=820, CX=W/2, CY=H/2;
   const rami=data.rami||[], nRami=rami.length;
-  svg.setAttribute('viewBox',`0 0 ${W} 600`);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
 
   function el(tag,attrs,txt) {
     const e=document.createElementNS(ns,tag);
@@ -302,28 +302,31 @@ function renderMap(data) {
   filt.appendChild(el('feDropShadow',{dx:'2',dy:'3',stdDeviation:'4','flood-color':'rgba(124,58,237,0.2)'}));
   defs.appendChild(filt); svg.appendChild(defs);
 
-  [[60,40],[700,50],[30,540],[730,510],[140,130],[620,430],[220,540],[560,70]].forEach(([sx,sy],i)=>
-    svg.appendChild(el('text',{x:sx,y:sy,'font-size':'12','text-anchor':'middle',opacity:'0.18'},i%2?'✿':'✦'))
+  [[40,40],[860,50],[30,780],[870,760],[100,200],[800,600]].forEach(([sx,sy],i)=>
+    svg.appendChild(el('text',{x:sx,y:sy,'font-size':'14','text-anchor':'middle',opacity:'0.15'},i%2?'✿':'✦'))
   );
 
-  const cl=wrapText(data.centrale,13), crx=70, cry=42+(cl.length-1)*10;
+  const cl=wrapText(data.centrale,13), crx=75, cry=44+(cl.length-1)*10;
   const cg=el('g',{});
   cg.appendChild(el('ellipse',{cx:CX+3,cy:CY+5,rx:crx,ry:cry,fill:'rgba(124,58,237,0.2)'}));
   cg.appendChild(el('ellipse',{cx:CX,cy:CY,rx:crx,ry:cry,fill:'#7C3AED',filter:'url(#sh)'}));
-  cg.appendChild(el('text',{x:CX,y:CY-cry+20,'font-size':'22','text-anchor':'middle'},data.emoji_centrale||'⭐'));
+  cg.appendChild(el('text',{x:CX,y:CY-cry+22,'font-size':'24','text-anchor':'middle'},data.emoji_centrale||'⭐'));
   addLines(cg,cl,CX,CY+8,'white','13',18,'800');
   svg.appendChild(cg);
 
-  const angleStep=(2*Math.PI)/nRami, branchR=195, leafR=108;
+  // rami vicini al centro, foglie ben distanziate dai rami
+  const branchR=170, leafR=160;
 
   rami.forEach((ramo,ri) => {
-    const angle=-Math.PI/2+ri*angleStep;
+    const angle=-Math.PI/2+ri*(2*Math.PI/nRami);
     const bx=CX+branchR*Math.cos(angle), by=CY+branchR*Math.sin(angle);
     const mx=(CX+bx)/2+(by-CY)*0.2, my=(CY+by)/2-(bx-CX)*0.2;
     const cfg=COLORS[ri%COLORS.length];
-    const bl=wrapText(ramo.etichetta,11), bry=24+(bl.length-1)*9;
+    const bl=wrapText(ramo.etichetta,11), bry=26+(bl.length-1)*9;
     const foglie=ramo.foglie||[], nF=foglie.length;
-    const spread=Math.PI/2.5, sa=nF>1?angle-spread/2:angle;
+    // spread più ampio per foglie ben distanziate
+    const spread=nF>1 ? Math.PI/2.2 : 0;
+    const sa=angle-spread/2;
 
     svg.insertBefore(el('path',{d:`M ${CX} ${CY} Q ${mx} ${my} ${bx} ${by}`,fill:'none',stroke:cfg.fill,'stroke-width':'2.5',opacity:'0.45','stroke-dasharray':'6,4'}),cg);
 
@@ -331,13 +334,13 @@ function renderMap(data) {
       const la=nF>1?sa+(spread/(nF-1))*fi:angle;
       const lx=bx+leafR*Math.cos(la), ly=by+leafR*Math.sin(la);
       const txt=((f.emoji||'')+(f.emoji?' ':'')+f.testo).trim();
-      const ll=wrapText(txt,13);
-      const lrx=Math.max(48,ll.reduce((m,l)=>Math.max(m,l.length),0)*3.8);
-      const lry=19+(ll.length-1)*8, th=(ll.length-1)*15;
+      const ll=wrapText(txt,11);
+      const lrx=Math.max(52,ll.reduce((m,l)=>Math.max(m,l.length),0)*4.2);
+      const lry=20+(ll.length-1)*9, th=(ll.length-1)*16;
       svg.insertBefore(el('line',{x1:bx,y1:by,x2:lx,y2:ly,stroke:cfg.fill,'stroke-width':'1.5',opacity:'0.3'}),cg);
       const lg=el('g',{});
       lg.appendChild(el('rect',{x:lx-lrx,y:ly-lry,width:lrx*2,height:lry*2,rx:'16',fill:cfg.light,stroke:cfg.fill,'stroke-width':'2'}));
-      ll.forEach((line,li)=>lg.appendChild(el('text',{x:lx,y:ly-th/2+li*15+5,fill:cfg.stroke,'font-size':'11','text-anchor':'middle','font-family':'Nunito,sans-serif','font-weight':'700'},line)));
+      ll.forEach((line,li)=>lg.appendChild(el('text',{x:lx,y:ly-th/2+li*16+5,fill:cfg.stroke,'font-size':'12','text-anchor':'middle','font-family':'Nunito,sans-serif','font-weight':'700'},line)));
       svg.appendChild(lg);
     });
 
