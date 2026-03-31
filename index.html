@@ -181,11 +181,28 @@ function handleFile(input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    imageB64 = e.target.result.split(',')[1];
-    const img = document.getElementById('preview-img');
-    img.src = e.target.result; img.style.display = 'block';
-    document.getElementById('upload-placeholder').style.display = 'none';
-    checkReady();
+    // comprimi l'immagine prima di usarla
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // ridimensiona se troppo grande
+      let w = img.width, h = img.height;
+      const maxSize = 1600;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // qualità 0.85 → file piccolo ma nitido
+      const compressed = canvas.toDataURL('image/jpeg', 0.85);
+      imageB64 = compressed.split(',')[1];
+      const preview = document.getElementById('preview-img');
+      preview.src = compressed; preview.style.display = 'block';
+      document.getElementById('upload-placeholder').style.display = 'none';
+      checkReady();
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
